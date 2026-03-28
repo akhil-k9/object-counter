@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VisionCount — Object Detection System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Background Grid -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          <path d="M11 8v6M8 11h6"/>
+        </svg>
+      </div>
+      <span>VisionCount</span>
+    </div>
+    <nav>
+      <span class="nav-badge">YOLOv8s Model</span>
+      <span class="nav-badge accent">COCO • 80 Classes</span>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-label">Deep Learning • Computer Vision</div>
+    <h1>Detect & Count <br/><span class="highlight">Objects Instantly</span></h1>
+    <p class="hero-sub">Upload an image or use your live camera to detect and count objects in real-time using YOLOv8 deep learning model trained on 80 object classes.</p>
+  </section>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="tab active" onclick="switchTab('upload')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      Upload Image
+    </button>
+    <button class="tab" onclick="switchTab('camera')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M23 7 16 12 23 17z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+      </svg>
+      Live Camera
+    </button>
+  </div>
+
+  <!-- Upload Panel -->
+  <div class="panel" id="upload-panel">
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <p class="upload-title">Drop your image here</p>
+      <p class="upload-sub">or click to browse • JPG, PNG, WEBP</p>
+      <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(event)"/>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-area" id="preview-area" style="display:none">
+      <div class="preview-grid">
+        <div class="preview-box">
+          <div class="box-label">Original Image</div>
+          <img id="original-img" src="" alt="Original"/>
+        </div>
+        <div class="preview-box">
+          <div class="box-label">Detected Objects</div>
+          <img id="result-img" src="" alt="Result"/>
+          <div class="loading-overlay" id="loading">
+            <div class="spinner"></div>
+            <span>Analyzing...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="results-section" id="results-section" style="display:none">
+        <div class="total-count">
+          <span class="count-number" id="total-count">0</span>
+          <span class="count-label">Total Objects Detected</span>
+        </div>
+        <div class="object-grid" id="object-grid"></div>
+      </div>
+
+      <button class="btn-reset" onclick="resetUpload()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        Try Another Image
+      </button>
+    </div>
+  </div>
+
+  <!-- Camera Panel -->
+  <div class="panel" id="camera-panel" style="display:none">
+    <div class="camera-container">
+      <div class="camera-feed" id="camera-feed-box">
+        <div class="camera-placeholder" id="camera-placeholder">
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <path d="M23 7 16 12 23 17z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+          <p>Camera is off</p>
+        </div>
+        <img id="camera-stream" src="" alt="Live Feed" style="display:none; width:100%; border-radius:12px;"/>
+      </div>
+      <div class="camera-controls">
+        <button class="btn-camera start" id="start-btn" onclick="startCamera()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Start Camera
+        </button>
+        <button class="btn-camera stop" id="stop-btn" onclick="stopCamera()" style="display:none">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+          </svg>
+          Stop Camera
+        </button>
+      </div>
+    </div>
+    <div class="camera-info">
+      <div class="info-card">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p>Live camera uses <strong>ByteTrack</strong> to assign unique IDs — preventing double counting when objects reappear.</p>
+      </div>
+      <div class="info-card">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        <p>A <strong>virtual counting line</strong> is drawn across the frame — objects are counted only when they cross it.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-num">80</span>
+      <span class="stat-desc">Object Classes</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-num">5000</span>
+      <span class="stat-desc">Images Tested</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-num">6.26</span>
+      <span class="stat-desc">Avg Objects/Image</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-num">3.94s</span>
+      <span class="stat-desc">Avg Detection Speed</span>
+    </div>
+  </div>
+
+  <!-- Model Comparison Table -->
+  <div class="comparison-section">
+    <h2 class="section-title">Model Comparison Results</h2>
+    <p class="section-sub">Tested on COCO Val 2017 dataset — 100 images</p>
+    <div class="table-wrapper">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Total Objects</th>
+            <th>Avg Per Image</th>
+            <th>Time (sec)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="model-tag nano">YOLOv8n</span></td>
+            <td>554</td>
+            <td>5.54</td>
+            <td>7.28s</td>
+            <td><span class="status-tag rejected">Not Selected</span></td>
+          </tr>
+          <tr class="selected-row">
+            <td><span class="model-tag small">YOLOv8s</span></td>
+            <td>626</td>
+            <td>6.26</td>
+            <td>3.94s</td>
+            <td><span class="status-tag selected">✓ Selected</span></td>
+          </tr>
+          <tr>
+            <td><span class="model-tag medium">YOLOv8m</span></td>
+            <td>690</td>
+            <td>6.90</td>
+            <td>4.87s</td>
+            <td><span class="status-tag rejected">Not Selected</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>Built with <strong>YOLOv8</strong> + <strong>Flask</strong> + <strong>OpenCV</strong> • Deep Learning Project</p>
+  </footer>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
